@@ -4,8 +4,17 @@ import uuid
 import os
 
 # --- Configuration ---
-if os.path.exists("credentials.json"):
-    os.environ["GOOGLE_APPLICATION_CREDENTIALS_JSON"] = "credentials.json"
+#if os.path.exists("credentials.json"):
+ #   os.environ["GOOGLE_APPLICATION_CREDENTIALS_JSON"] = "credentials.json"
+
+import os, json, tempfile, streamlit as st
+
+if "GOOGLE_APPLICATION_CREDENTIALS" not in os.environ:
+    creds = json.loads(st.secrets["GOOGLE_APPLICATION_CREDENTIALS_JSON"])
+    with tempfile.NamedTemporaryFile(delete=False) as f:
+        json.dump(creds, f)
+        os.environ["GOOGLE_APPLICATION_CREDENTIALS"] = f.name
+
 
 PROJECT_ID = "solopool-mvp-xapu" # User must replace this
 SESSION_ID = str(uuid.uuid4()) # Unique session per reload
