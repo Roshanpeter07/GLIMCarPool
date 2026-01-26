@@ -5,7 +5,7 @@ import os
 
 # --- Configuration ---
 if os.path.exists("credentials.json"):
-    os.environ["GOOGLE_APPLICATION_CREDENTIALS"] = "credentials.json"
+    os.environ["GOOGLE_APPLICATION_CREDENTIALS_JSON"] = "credentials.json"
 
 PROJECT_ID = "solopool-mvp-xapu" # User must replace this
 SESSION_ID = str(uuid.uuid4()) # Unique session per reload
