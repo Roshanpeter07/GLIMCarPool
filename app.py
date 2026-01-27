@@ -85,15 +85,15 @@ st.set_page_config(
 # -------------------------------------------------
 # LEFT SIDEBAR — INSTRUCTIONS & PROMPTS
 # -------------------------------------------------
-st.sidebar.title("🚗 How to use GLIM Carpool")
+st.sidebar.title("How to use GLIM Carpool")
 
 st.sidebar.markdown(
     """
-### 💬 How to chat
+### How to chat
 Type your message naturally.  
 The assistant will guide you step by step.
 
-### ✅ Suggested prompts
+### Suggested prompts
 Try one of these:
 - **"I want to find a ride"**
 - **"Book a ride to campus tomorrow"**
@@ -101,7 +101,7 @@ Try one of these:
 - **"Yes"** (to confirm a group)
 - **"No"** (to reject a group)
 
-### ℹ️ Tips
+### Tips
 - Use your **phone number** consistently
 - You can respond **Yes / No** when asked
 - The bot will ask follow-up questions automatically
@@ -114,7 +114,7 @@ st.sidebar.caption("GLIM Carpool MVP")
 # -------------------------------------------------
 # MAIN TITLE
 # -------------------------------------------------
-st.title("🚗 GLIM Carpool Assistant")
+st.title("GLIM Carpool Assistant")
 st.caption("Find rides, check status, and confirm groups")
 
 # -------------------------------------------------
