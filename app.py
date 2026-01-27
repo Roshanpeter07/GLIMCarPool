@@ -1,5 +1,8 @@
-import streamlit as st
+import os
+import json
 import uuid
+import tempfile
+import streamlit as st
 from google.cloud import dialogflow
 from google.api_core.client_options import ClientOptions
 
@@ -8,6 +11,24 @@ from google.api_core.client_options import ClientOptions
 # --------------------------------
 PROJECT_ID = "solopool-mvp-xapu"
 LANGUAGE_CODE = "en"
+
+# --------------------------------
+# FIX GOOGLE_APPLICATION_CREDENTIALS
+# --------------------------------
+# If Streamlit secret contains JSON instead of a file path,
+# write it to a temp file and update the env var.
+if "GOOGLE_APPLICATION_CREDENTIALS" in os.environ:
+    cred_value = os.environ["GOOGLE_APPLICATION_CREDENTIALS"].strip()
+
+    # Detect JSON (starts with { )
+    if cred_value.startswith("{"):
+        creds_dict = json.loads(cred_value)
+
+        tmp = tempfile.NamedTemporaryFile(delete=False, suffix=".json")
+        tmp.write(json.dumps(creds_dict).encode("utf-8"))
+        tmp.close()
+
+        os.environ["GOOGLE_APPLICATION_CREDENTIALS"] = tmp.name
 
 # --------------------------------
 # SESSION ID (PERSISTENT)
@@ -52,7 +73,6 @@ def detect_intent(text: str) -> str:
 
     return response.query_result.fulfillment_text
 
-
 # --------------------------------
 # STREAMLIT UI
 # --------------------------------
@@ -73,26 +93,21 @@ for msg in st.session_state.messages:
 user_input = st.chat_input("Type your message here...")
 
 if user_input:
-    # Show user message
-    st.session_state.messages.append({
-        "role": "user",
-        "content": user_input
-    })
+    st.session_state.messages.append(
+        {"role": "user", "content": user_input}
+    )
     with st.chat_message("user"):
         st.write(user_input)
 
-    # Get bot response
     with st.spinner("Contacting GLIM Carpool..."):
         try:
             reply = detect_intent(user_input)
         except Exception as e:
             reply = f"❌ Dialogflow error: {e}"
 
-    # Show bot response
-    st.session_state.messages.append({
-        "role": "assistant",
-        "content": reply
-    })
+    st.session_state.messages.append(
+        {"role": "assistant", "content": reply}
+    )
     with st.chat_message("assistant"):
         st.write(reply)
 
@@ -103,7 +118,6 @@ with st.expander("🔍 Debug Info"):
     st.write("Project ID:", PROJECT_ID)
     st.write("Session ID:", SESSION_ID)
     st.write(
-        "Credentials env var set:",
-        "GOOGLE_APPLICATION_CREDENTIALS" in st.secrets
-        or "GOOGLE_APPLICATION_CREDENTIALS" in __import__("os").environ
+        "Credentials file exists:",
+        os.path.exists(os.environ.get("GOOGLE_APPLICATION_CREDENTIALS", ""))
     )
