@@ -1,46 +1,47 @@
 import os
-import json
 import uuid
+import json
+import base64
 import tempfile
 import streamlit as st
 from google.cloud import dialogflow
 from google.api_core.client_options import ClientOptions
 
-# --------------------------------
+# -------------------------------------------------
 # CONFIG
-# --------------------------------
+# -------------------------------------------------
 PROJECT_ID = "solopool-mvp-xapu"
 LANGUAGE_CODE = "en"
 
-# --------------------------------
-# FIX GOOGLE_APPLICATION_CREDENTIALS
-# --------------------------------
-# If Streamlit secret contains JSON instead of a file path,
-# write it to a temp file and update the env var.
-if "GOOGLE_APPLICATION_CREDENTIALS" in os.environ:
-    cred_value = os.environ["GOOGLE_APPLICATION_CREDENTIALS"].strip()
+# -------------------------------------------------
+# LOAD GOOGLE CREDENTIALS FROM BASE64 SECRET
+# -------------------------------------------------
+if "GOOGLE_APPLICATION_CREDENTIALS_B64" not in st.secrets:
+    st.error("Missing GOOGLE_APPLICATION_CREDENTIALS_B64 in Streamlit secrets")
+    st.stop()
 
-    # Detect JSON (starts with { )
-    if cred_value.startswith("{"):
-        creds_dict = json.loads(cred_value)
+# Decode base64 → write temp JSON file
+creds_json = base64.b64decode(
+    st.secrets["GOOGLE_APPLICATION_CREDENTIALS_B64"]
+).decode("utf-8")
 
-        tmp = tempfile.NamedTemporaryFile(delete=False, suffix=".json")
-        tmp.write(json.dumps(creds_dict).encode("utf-8"))
-        tmp.close()
+tmp = tempfile.NamedTemporaryFile(delete=False, suffix=".json")
+tmp.write(creds_json.encode("utf-8"))
+tmp.close()
 
-        os.environ["GOOGLE_APPLICATION_CREDENTIALS"] = tmp.name
+os.environ["GOOGLE_APPLICATION_CREDENTIALS"] = tmp.name
 
-# --------------------------------
-# SESSION ID (PERSISTENT)
-# --------------------------------
+# -------------------------------------------------
+# SESSION ID (PERSISTENT ACROSS RERUNS)
+# -------------------------------------------------
 if "session_id" not in st.session_state:
     st.session_state.session_id = str(uuid.uuid4())
 
 SESSION_ID = st.session_state.session_id
 
-# --------------------------------
-# CACHED DIALOGFLOW CLIENT
-# --------------------------------
+# -------------------------------------------------
+# DIALOGFLOW CLIENT (CACHED)
+# -------------------------------------------------
 @st.cache_resource
 def get_dialogflow_client():
     return dialogflow.SessionsClient(
@@ -51,9 +52,9 @@ def get_dialogflow_client():
 
 session_client = get_dialogflow_client()
 
-# --------------------------------
-# DIALOGFLOW FUNCTION
-# --------------------------------
+# -------------------------------------------------
+# DIALOGFLOW QUERY FUNCTION
+# -------------------------------------------------
 def detect_intent(text: str) -> str:
     session = session_client.session_path(PROJECT_ID, SESSION_ID)
 
@@ -73,9 +74,9 @@ def detect_intent(text: str) -> str:
 
     return response.query_result.fulfillment_text
 
-# --------------------------------
+# -------------------------------------------------
 # STREAMLIT UI
-# --------------------------------
+# -------------------------------------------------
 st.set_page_config(page_title="GLIM Carpool", page_icon="🚗")
 st.title("🚗 GLIM Carpool Assistant")
 st.caption("Find rides, check status, and confirm groups")
@@ -84,7 +85,6 @@ st.caption("Find rides, check status, and confirm groups")
 if "messages" not in st.session_state:
     st.session_state.messages = []
 
-# Display history
 for msg in st.session_state.messages:
     with st.chat_message(msg["role"]):
         st.write(msg["content"])
@@ -99,7 +99,7 @@ if user_input:
     with st.chat_message("user"):
         st.write(user_input)
 
-    with st.spinner("Contacting GLIM Carpool..."):
+    with st.spinner("Contacting Dialogflow..."):
         try:
             reply = detect_intent(user_input)
         except Exception as e:
@@ -111,9 +111,9 @@ if user_input:
     with st.chat_message("assistant"):
         st.write(reply)
 
-# --------------------------------
+# -------------------------------------------------
 # DEBUG (REMOVE LATER)
-# --------------------------------
+# -------------------------------------------------
 with st.expander("🔍 Debug Info"):
     st.write("Project ID:", PROJECT_ID)
     st.write("Session ID:", SESSION_ID)
