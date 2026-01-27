@@ -20,7 +20,6 @@ if "GOOGLE_APPLICATION_CREDENTIALS_B64" not in st.secrets:
     st.error("Missing GOOGLE_APPLICATION_CREDENTIALS_B64 in Streamlit secrets")
     st.stop()
 
-# Decode base64 → write temp JSON file
 creds_json = base64.b64decode(
     st.secrets["GOOGLE_APPLICATION_CREDENTIALS_B64"]
 ).decode("utf-8")
@@ -32,7 +31,7 @@ tmp.close()
 os.environ["GOOGLE_APPLICATION_CREDENTIALS"] = tmp.name
 
 # -------------------------------------------------
-# SESSION ID (PERSISTENT ACROSS RERUNS)
+# SESSION ID (PERSISTENT)
 # -------------------------------------------------
 if "session_id" not in st.session_state:
     st.session_state.session_id = str(uuid.uuid4())
@@ -75,13 +74,66 @@ def detect_intent(text: str) -> str:
     return response.query_result.fulfillment_text
 
 # -------------------------------------------------
-# STREAMLIT UI
+# PAGE CONFIG
 # -------------------------------------------------
-st.set_page_config(page_title="GLIM Carpool", page_icon="🚗")
+st.set_page_config(
+    page_title="GLIM Carpool",
+    page_icon="🚗",
+    layout="wide"
+)
+
+# -------------------------------------------------
+# LEFT SIDEBAR — INSTRUCTIONS & PROMPTS
+# -------------------------------------------------
+st.sidebar.title("🚗 How to use GLIM Carpool")
+
+st.sidebar.markdown(
+    """
+### 💬 How to chat
+Type your message naturally.  
+The assistant will guide you step by step.
+
+### ✅ Suggested prompts
+Try one of these:
+- **"I want to find a ride"**
+- **"Book a ride to campus tomorrow"**
+- **"Check my ride status"**
+- **"Yes"** (to confirm a group)
+- **"No"** (to reject a group)
+
+### ℹ️ Tips
+- Use your **phone number** consistently
+- You can respond **Yes / No** when asked
+- The bot will ask follow-up questions automatically
+"""
+)
+
+st.sidebar.markdown("---")
+st.sidebar.caption("GLIM Carpool MVP")
+
+# -------------------------------------------------
+# MAIN TITLE
+# -------------------------------------------------
 st.title("🚗 GLIM Carpool Assistant")
 st.caption("Find rides, check status, and confirm groups")
 
-# Chat history
+# -------------------------------------------------
+# TOP-RIGHT DEBUG PANEL
+# -------------------------------------------------
+top_left, top_right = st.columns([4, 1])
+
+with top_right:
+    with st.expander("🛠 Debug", expanded=False):
+        st.write("Project ID:", PROJECT_ID)
+        st.write("Session ID:", SESSION_ID)
+        st.write(
+            "Credentials loaded:",
+            os.path.exists(os.environ.get("GOOGLE_APPLICATION_CREDENTIALS", ""))
+        )
+
+# -------------------------------------------------
+# CHAT HISTORY
+# -------------------------------------------------
 if "messages" not in st.session_state:
     st.session_state.messages = []
 
@@ -89,7 +141,9 @@ for msg in st.session_state.messages:
     with st.chat_message(msg["role"]):
         st.write(msg["content"])
 
-# User input
+# -------------------------------------------------
+# USER INPUT
+# -------------------------------------------------
 user_input = st.chat_input("Type your message here...")
 
 if user_input:
@@ -99,7 +153,7 @@ if user_input:
     with st.chat_message("user"):
         st.write(user_input)
 
-    with st.spinner("Contacting Dialogflow..."):
+    with st.spinner("Contacting GLIM Carpool..."):
         try:
             reply = detect_intent(user_input)
         except Exception as e:
@@ -110,14 +164,3 @@ if user_input:
     )
     with st.chat_message("assistant"):
         st.write(reply)
-
-# -------------------------------------------------
-# DEBUG (REMOVE LATER)
-# -------------------------------------------------
-with st.expander("🔍 Debug Info"):
-    st.write("Project ID:", PROJECT_ID)
-    st.write("Session ID:", SESSION_ID)
-    st.write(
-        "Credentials file exists:",
-        os.path.exists(os.environ.get("GOOGLE_APPLICATION_CREDENTIALS", ""))
-    )
