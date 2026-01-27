@@ -108,8 +108,8 @@ Try one of these:
 """
 )
 
-st.sidebar.markdown("---")
-st.sidebar.caption("GLIM Carpool MVP")
+# st.sidebar.markdown("---")
+# st.sidebar.caption("GLIM Carpool MVP")
 
 # -------------------------------------------------
 # MAIN TITLE
